@@ -45,17 +45,22 @@ curated_dynamic = DynamicFrame.fromDF(
     "curated_dynamic"
 )
 
-glueContext.write_dynamic_frame.from_options(
-    frame=curated_dynamic,
+sink = glueContext.getSink(
+    path="s3://stedi-samyugtha-01/customer_curated/",
     connection_type="s3",
-    connection_options={
-        "path": "s3://stedi-samyugtha-01/customer_curated/",
-        "enableUpdateCatalog": True,
-        "updateBehavior": "UPDATE_IN_DATABASE",
-        "partitionKeys": []
-    },
-    format="parquet"
+    updateBehavior="UPDATE_IN_DATABASE",
+    partitionKeys=[],
+    enableUpdateCatalog=True,
+    transformation_ctx="customer_curated_sink"
 )
 
-job.commit()
+sink.setCatalogInfo(
+    catalogDatabase="stedi_db",
+    catalogTableName="customer_curated"
+)
+
+sink.setFormat("glueparquet")
+
+sink.writeFrame(curated_dynamic)
+
 job.commit()
