@@ -49,17 +49,22 @@ machine_learning_dynamic = DynamicFrame.fromDF(
     "machine_learning_dynamic"
 )
 
-glueContext.write_dynamic_frame.from_options(
-    frame=machine_learning_dynamic,
+sink = glueContext.getSink(
+    path="s3://stedi-samyugtha-01/machine_learning_curated/",
     connection_type="s3",
-    connection_options={
-        "path": "s3://stedi-samyugtha-01/machine_learning_curated/",
-        "enableUpdateCatalog": True,
-        "updateBehavior": "UPDATE_IN_DATABASE",
-        "partitionKeys": []
-    },
-    format="parquet"
+    updateBehavior="UPDATE_IN_DATABASE",
+    partitionKeys=[],
+    enableUpdateCatalog=True,
+    transformation_ctx="machine_learning_curated_sink"
 )
 
-job.commit()
+sink.setCatalogInfo(
+    catalogDatabase="stedi_db",
+    catalogTableName="machine_learning_curated"
+)
+
+sink.setFormat("glueparquet")
+
+sink.writeFrame(machine_learning_dynamic)
+
 job.commit()
