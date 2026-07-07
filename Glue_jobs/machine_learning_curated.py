@@ -4,6 +4,7 @@ from awsglue.context import GlueContext
 from awsglue.job import Job
 from awsglue.utils import getResolvedOptions
 from pyspark.sql.functions import col
+from awsglue.dynamicframe import DynamicFrame
 
 ## @params: [JOB_NAME]
 args = getResolvedOptions(sys.argv, ['JOB_NAME'])
@@ -41,8 +42,24 @@ machine_learning_curated_df=machine_learning_curated_df.select(
     acc_df["y"],
     acc_df["z"]
 )
-machine_learning_curated_df.write.mode("overwrite").parquet(
-    "s3://stedi-samyugtha-01/machine_learning_curated"
+
+machine_learning_dynamic = DynamicFrame.fromDF(
+    machine_learning_curated_df,
+    glueContext,
+    "machine_learning_dynamic"
 )
 
+glueContext.write_dynamic_frame.from_options(
+    frame=machine_learning_dynamic,
+    connection_type="s3",
+    connection_options={
+        "path": "s3://stedi-samyugtha-01/machine_learning_curated/",
+        "enableUpdateCatalog": True,
+        "updateBehavior": "UPDATE_IN_DATABASE",
+        "partitionKeys": []
+    },
+    format="parquet"
+)
+
+job.commit()
 job.commit()
