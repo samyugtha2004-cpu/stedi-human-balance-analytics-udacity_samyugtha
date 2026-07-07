@@ -34,16 +34,29 @@ joined_df=accelerometer_df.join(
 )
 
 final_df=joined_df.select(
-    customer_df["customername"],
-    customer_df["email"],
-    customer_df["serialnumber"],
+    accelerometer_df["user"],
     accelerometer_df["timestamp"],
     accelerometer_df["x"],
     accelerometer_df["y"],
     accelerometer_df["z"]
 )
-final_df.write.mode("overwrite").parquet(
-    "s3://stedi-samyugtha-01/accelerometer_trusted/"
+
+final_dynamic = DynamicFrame.fromDF(
+    final_df,
+    glueContext,
+    "final_dynamic"
+)
+
+glueContext.write_dynamic_frame.from_options(
+    frame=final_dynamic,
+    connection_type="s3",
+    connection_options={
+        "path": "s3://stedi-samyugtha-01/accelerometer_trusted/",
+        "enableUpdateCatalog": True,
+        "updateBehavior": "UPDATE_IN_DATABASE",
+        "partitionKeys": []
+    },
+    format="parquet"
 )
 
 job.commit()
