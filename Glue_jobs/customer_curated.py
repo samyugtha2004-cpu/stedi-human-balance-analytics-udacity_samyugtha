@@ -19,7 +19,7 @@ customer_df=spark.read.parquet(
 )
 accelerometer_df=glueContext.create_dynamic_frame.from_catalog(
     database="stedi_db",
-    table_name="accelerometer"
+    table_name="accelerometer_trusted"
 ).toDF()
 joined_df=customer_df.join(
     accelerometer_df,
@@ -38,7 +38,24 @@ curated_df=joined_df.select(
     customer_df["sharewithpublicasofdate"],
     customer_df["sharewithfriendsasofdate"]
 ).dropDuplicates()
-curated_df.write.mode("overwrite").parquet(
-    "s3://stedi-samyugtha-01/customer_curated/"
+
+curated_dynamic = DynamicFrame.fromDF(
+    curated_df,
+    glueContext,
+    "curated_dynamic"
 )
+
+glueContext.write_dynamic_frame.from_options(
+    frame=curated_dynamic,
+    connection_type="s3",
+    connection_options={
+        "path": "s3://stedi-samyugtha-01/customer_curated/",
+        "enableUpdateCatalog": True,
+        "updateBehavior": "UPDATE_IN_DATABASE",
+        "partitionKeys": []
+    },
+    format="parquet"
+)
+
+job.commit()
 job.commit()
