@@ -47,16 +47,24 @@ final_dynamic = DynamicFrame.fromDF(
     "final_dynamic"
 )
 
-glueContext.write_dynamic_frame.from_options(
-    frame=final_dynamic,
+sink = glueContext.getSink(
+    path="s3://stedi-samyugtha-01/accelerometer_trusted/",
     connection_type="s3",
-    connection_options={
-        "path": "s3://stedi-samyugtha-01/accelerometer_trusted/",
-        "enableUpdateCatalog": True,
-        "updateBehavior": "UPDATE_IN_DATABASE",
-        "partitionKeys": []
-    },
-    format="parquet"
+    updateBehavior="UPDATE_IN_DATABASE",
+    partitionKeys=[],
+    enableUpdateCatalog=True,
+    transformation_ctx="accelerometer_trusted_sink"
 )
+
+sink.setCatalogInfo(
+    catalogDatabase="stedi_db",
+    catalogTableName="accelerometer_trusted"
+)
+
+sink.setFormat("glueparquet")
+
+sink.writeFrame(final_dynamic)
+
+
 
 job.commit()
