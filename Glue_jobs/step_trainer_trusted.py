@@ -4,6 +4,7 @@ from awsglue.context import GlueContext
 from awsglue.job import Job
 from awsglue.utils import getResolvedOptions
 from pyspark.sql.functions import col
+from awsglue.dynamicframe import DynamicFrame
 
 ## @params: [JOB_NAME]
 args = getResolvedOptions(sys.argv, ['JOB_NAME'])
@@ -32,7 +33,24 @@ trusted_df=step_df.join(
     "serialnumber",
     "inner"
 )
-trusted_df.write.mode("overwrite").parquet(
-    "s3://stedi-samyugtha-01/step_trainer_trusted/"
+
+trusted_dynamic = DynamicFrame.fromDF(
+    trusted_df,
+    glueContext,
+    "trusted_dynamic"
 )
+
+glueContext.write_dynamic_frame.from_options(
+    frame=trusted_dynamic,
+    connection_type="s3",
+    connection_options={
+        "path": "s3://stedi-samyugtha-01/step_trainer_trusted/",
+        "enableUpdateCatalog": True,
+        "updateBehavior": "UPDATE_IN_DATABASE",
+        "partitionKeys": []
+    },
+    format="parquet"
+)
+
+job.commit()
 job.commit()
