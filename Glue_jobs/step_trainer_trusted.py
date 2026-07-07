@@ -40,17 +40,22 @@ trusted_dynamic = DynamicFrame.fromDF(
     "trusted_dynamic"
 )
 
-glueContext.write_dynamic_frame.from_options(
-    frame=trusted_dynamic,
+sink = glueContext.getSink(
+    path="s3://stedi-samyugtha-01/step_trainer_trusted/",
     connection_type="s3",
-    connection_options={
-        "path": "s3://stedi-samyugtha-01/step_trainer_trusted/",
-        "enableUpdateCatalog": True,
-        "updateBehavior": "UPDATE_IN_DATABASE",
-        "partitionKeys": []
-    },
-    format="parquet"
+    updateBehavior="UPDATE_IN_DATABASE",
+    partitionKeys=[],
+    enableUpdateCatalog=True,
+    transformation_ctx="step_trainer_trusted_sink"
 )
 
-job.commit()
+sink.setCatalogInfo(
+    catalogDatabase="stedi_db",
+    catalogTableName="step_trainer_trusted"
+)
+
+sink.setFormat("glueparquet")
+
+sink.writeFrame(trusted_dynamic)
+
 job.commit()
