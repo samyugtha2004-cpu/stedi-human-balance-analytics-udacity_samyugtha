@@ -27,13 +27,18 @@ trusted_dynamic=DynamicFrame.fromDF(
     glueContext,
     "trusted_dynamic"
 )
+
 glueContext.write_dynamic_frame.from_options(
     frame=trusted_dynamic,
     connection_type="s3",
     connection_options={
-        "path":"s3://stedi-samyugtha-01/customer_trusted/"
+        "path": "s3://stedi-samyugtha-01/customer_trusted/",
+        "enableUpdateCatalog": True,
+        "updateBehavior": "UPDATE_IN_DATABASE",
+        "partitionKeys": []
     },
     format="parquet"
 )
+
 
 job.commit()
